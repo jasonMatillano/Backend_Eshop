@@ -13,6 +13,7 @@ app.use(morgan('tiny'));
 
 // routers
 app.use(`${api}/products`, require('./routers/products'));
+app.use(`${api}/categories`, require('./routers/categories'));
 
 mongoose.connect(process.env.MONGODB_URL,{
     useNewUrlParser: true,
