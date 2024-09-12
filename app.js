@@ -11,34 +11,8 @@ const api = process.env.API_URL;
 app.use(bodyParser.json());
 app.use(morgan('tiny'));
 
-
-const Product = require("./models/product");
-app.get(`${api}/products`,async function(req, res) {
-    const productList = await Product.find({});
-
-    if(!productList) {
-        res.status(500).json({
-            succes: false
-        })
-    }
-    res.send(productList);
-})
-
-app.post(`${api}/products`, function(req, res) {
-    const product = new Product({
-        name: req.body.name,
-        image: req.body.image,
-        countInStock: req.body.countInStock
-    })
-    product.save().then((cratedProduct) => {
-        res.status(201).json(cratedProduct);
-    }).catch((err) => {
-        res.status(500).json({
-            error: err,
-            succes: false
-        });
-    })
-})
+// routers
+app.use(`${api}/products`, require('./routers/products'));
 
 mongoose.connect(process.env.MONGODB_URL,{
     useNewUrlParser: true,
