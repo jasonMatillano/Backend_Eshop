@@ -11,17 +11,8 @@ const api = process.env.API_URL;
 app.use(bodyParser.json());
 app.use(morgan('tiny'));
 
-const productSchema = new mongoose.Schema({
-    name: String,
-    image: String,
-    countInStock: {
-        type: Number,
-        required: true
-    }
-})
 
-const Product = mongoose.model("Product", productSchema);
-
+const Product = require("./models/product");
 app.get(`${api}/products`,async function(req, res) {
     const productList = await Product.find({});
 
