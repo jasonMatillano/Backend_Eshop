@@ -5,23 +5,44 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-router.get(`/`, async (req, res) =>{
-    const userList = await User.find().select('-passwordHash');
+// Route to get a list of all users
+router.get('/', async (req, res) => {
+    try {
+        // Retrieve all users from the database, excluding the passwordHash field
+        const userList = await User.find().select('-passwordHash');
 
-    if(!userList) {
-        res.status(500).json({success: false})
-    } 
-    res.send(userList);
-})
+        // If no users are found, send a 500 status with a failure message
+        if (!userList) {
+            return res.status(500).json({ success: false, message: 'No users found.' });
+        }
 
-router.get('/:id', async(req,res)=>{
-    const user = await User.findById(req.params.id).select('-passwordHash');
+        // If users are found, send the list with a 200 status
+        res.status(200).send(userList);
+    } catch (error) {
+        // Handle any errors that occur during the process
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
 
-    if(!user) {
-        res.status(500).json({message: 'The user with the given ID was not found.'})
-    } 
-    res.status(200).send(user);
-})
+// Route to get a user by their ID
+router.get('/:id', async (req, res) => {
+    try {
+        // Find the user by ID, excluding the passwordHash field from the result
+        const user = await User.findById(req.params.id).select('-passwordHash');
+
+        // If the user is not found, send a 500 status with an error message
+        if (!user) {
+            return res.status(500).json({ message: 'The user with the given ID was not found.' });
+        }
+
+        // If the user is found, send the user object with a 200 status
+        res.status(200).send(user);
+    } catch (error) {
+        // Handle any errors that occur during the process
+        res.status(500).json({ message: 'Server error: ' + error.message });
+    }
+});
+
 
 router.post('/', async (req, res) => {
     try {
@@ -146,28 +167,46 @@ router.post('/register', async (req,res)=>{
 })
 
 
-router.delete('/:id', (req, res)=>{
-    User.findByIdAndRemove(req.params.id).then(user =>{
-        if(user) {
-            return res.status(200).json({success: true, message: 'the user is deleted!'})
+router.delete('/:id', async (req, res) => {
+    try {
+        // Attempt to find the user by ID and remove them from the collection
+        const user = await User.findByIdAndDelete(req.params.id);
+
+        // Check if a user was found and deleted
+        if (user) {
+            // Respond with a success message if the user was deleted
+            return res.status(200).json({ success: true, message: 'The user is deleted!' });
         } else {
-            return res.status(404).json({success: false , message: "user not found!"})
+            // Respond with an error message if the user was not found
+            return res.status(404).json({ success: false, message: 'User not found!' });
         }
-    }).catch(err=>{
-       return res.status(500).json({success: false, error: err}) 
-    })
-})
+    } catch (err) {
+        // Handle any errors that occur during the database operation
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
 
-router.get(`/get/count`, async (req, res) =>{
-    const userCount = await User.countDocuments((count) => count)
 
-    if(!userCount) {
-        res.status(500).json({success: false})
-    } 
-    res.send({
-        userCount: userCount
-    });
-})
+router.get(`/get/count`, async (req, res) => {
+    try {
+        // Fetch the count of all documents in the User collection
+        const userCount = await User.countDocuments();
+
+        // Check if the count is undefined or null
+        if (userCount === undefined || userCount === null) {
+            return res.status(500).json({ success: false, message: 'Could not count users.' });
+        }
+
+        // Send the user count as the response
+        res.send({
+            userCount: userCount
+        });
+    } catch (error) {
+        // Handle any errors that occur during the database operation
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
+
 
 
 module.exports =router;
