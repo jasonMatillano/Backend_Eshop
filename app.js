@@ -14,6 +14,8 @@ app.use(morgan('tiny'));
 // routers
 app.use(`${api}/products`, require('./routers/products'));
 app.use(`${api}/categories`, require('./routers/categories'));
+app.use(`${api}/users`, require('./routers/users'));
+
 
 mongoose.connect(process.env.MONGODB_URL,{
     useNewUrlParser: true,
