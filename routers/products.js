@@ -133,31 +133,37 @@ router.delete('/:id', (req, res)=>{
     })
 })
 
-router.get(`/get/count`, async (req, res) =>{
-    const productCount = await Product.countDocuments((count) => count)
+router.get('/get/count', async (req, res) => {
+    try {
+        const productCount = await Product.countDocuments(); // No need to pass a callback
 
-    if(!productCount) {
-        res.status(500).json({success: false})
-    } 
-    res.send({
-        productCount: productCount
-    });
-})
+        res.status(200).json({
+            productCount: productCount
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
-router.get(`/get/featured/:count`, async (req, res) =>{
-    const count = req.params.count ? req.params.count : 0
-    const products = await Product.find({isFeatured: true}).limit(+count);
 
-    if(!products) {
-        res.status(500).json({success: false})
-    } 
-    res.send(products);
-})
+router.get('/get/featured/:count', async (req, res) => {
+    const count = req.params.count ? parseInt(req.params.count) : 0;
 
-router.put(
-    '/gallery-images/:id', 
-    uploadOptions.array('images', 10), 
-    async (req, res)=> {
+    try {
+        const products = await Product.find({ isFeatured: true }).limit(count);
+
+        if (products.length === 0) {
+            return res.status(404).json({ success: false, message: 'No featured products found' });
+        }
+
+        res.status(200).send(products);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+
+router.put('/gallery-images/:id', uploadOptions.array('images', 10), async (req, res)=> {
         if(!mongoose.isValidObjectId(req.params.id)) {
             return res.status(400).send('Invalid Product Id')
          }
