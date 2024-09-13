@@ -119,30 +119,44 @@ router.put('/:id',async (req, res)=> {
     res.send(user);
 })
 
-router.post('/login', async (req,res) => {
-    const user = await User.findOne({email: req.body.email})
-    const secret = process.env.secret;
-    if(!user) {
-        return res.status(400).send('The user not found');
-    }
+router.post('/login', async (req, res) => {
+    try {
+        // Find a user in the database with the given email address
+        const user = await User.findOne({ email: req.body.email });
 
-    if(user && bcrypt.compareSync(req.body.password, user.passwordHash)) {
-        const token = jwt.sign(
-            {
-                userId: user.id,
-                isAdmin: user.isAdmin
-            },
-            secret,
-            {expiresIn : '1d'}
-        )
-       
-        res.status(200).send({user: user.email , token: token}) 
-    } else {
-       res.status(400).send('password is wrong!');
-    }
+        // Secret key for signing the JWT token from environment variables
+        const secret = process.env.secret;
 
-    
+        // If no user is found with the provided email, return a 400 status with an error message
+        if (!user) {
+            return res.status(400).send('The user not found');
+        }
+
+        // Check if the provided password matches the hashed password in the database
+        if (user && bcrypt.compareSync(req.body.password, user.passwordHash)) {
+            // Generate a JWT token if the password matches
+            const token = jwt.sign(
+                {
+                    userId: user.id,         // User ID
+                    // isAdmin: user.isAdmin    // User's admin status
+                },
+                secret,                      // Secret key for signing the token
+                { expiresIn: '1d' }           // Token expiration time
+            );
+
+            // Respond with the user's email and the generated token
+            res.status(200).send({ user: user.email, token: token });
+        } else {
+            // If the password is incorrect, return a 400 status with an error message
+            res.status(400).send('Password is wrong!');
+        }
+    } catch (err) {
+        // Handle any unexpected errors that occur during the operation
+        res.status(500).send('An error occurred');
+    }
 })
+
+
 
 
 router.post('/register', async (req,res)=>{
