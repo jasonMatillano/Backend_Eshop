@@ -209,17 +209,32 @@ router.get(`/get/count`, async (req, res) => {
 
 
 
-router.get(`/get/userorders/:userid`, async (req, res) =>{
-    const userOrderList = await Order.find({user: req.params.userid}).populate({ 
-        path: 'orderItems', populate: {
-            path : 'product', populate: 'category'} 
-        }).sort({'dateOrdered': -1});
+// GET request to retrieve all orders for a specific user
+router.get(`/get/userorders/:userid`, async (req, res) => {
 
-    if(!userOrderList) {
-        res.status(500).json({success: false})
-    } 
+    // Fetch the list of orders for the specified user, sorted by 'dateOrdered' in descending order
+    // We use Mongoose's 'find' method to get all orders that match the user ID in the URL parameter ':userid'
+    // The 'populate' method is used to include detailed data about the 'orderItems' and 'product', 
+    // and the 'category' associated with each product
+    const userOrderList = await Order.find({ user: req.params.userid })
+        .populate({ 
+            path: 'orderItems', 
+            populate: {
+                path: 'product', 
+                populate: 'category'  // Populates the 'category' field within each product
+            } 
+        })
+        .sort({ 'dateOrdered': -1 }); // Sort orders by 'dateOrdered' in descending order
+
+    // If the user's order list is not found, return a 500 server error with a JSON response
+    if (!userOrderList) {
+        res.status(500).json({ success: false });
+    }
+
+    // Send the list of user orders in the response
     res.send(userOrderList);
-})
+});
+
 
 
 
