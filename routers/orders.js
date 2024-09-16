@@ -3,28 +3,46 @@ const express = require('express');
 const { OrderItem } = require('../models/order-item');
 const router = express.Router();
 
-router.get(`/`, async (req, res) =>{
+// GET request to fetch a list of orders, sorted by date in descending order
+router.get(`/`, async (req, res) => {
+
+    // Fetch all orders from the database, populating the 'user' field with the user's name, and sorting by 'dateOrdered' in descending order
     const orderList = await Order.find().populate('user', 'name').sort({'dateOrdered': -1});
 
-    if(!orderList) {
-        res.status(500).json({success: false})
+    // If no orders are found or an error occurs, send a 500 response with success set to false
+    if (!orderList) {
+        res.status(500).json({ success: false });
     } 
-    res.send(orderList);
-})
 
-router.get(`/:id`, async (req, res) =>{
+    // If orders are found, send them as the response
+    res.send(orderList);
+});
+
+
+// GET request to fetch details of a specific order by ID
+router.get(`/:id`, async (req, res) => {
+
+    // Fetch the order by ID from the database, populate 'user' with the user's name,
+    // and populate 'orderItems' with the associated 'product' and its 'category'
     const order = await Order.findById(req.params.id)
-    .populate('user', 'name')
-    .populate({ 
-        path: 'orderItems', populate: {
-            path : 'product', populate: 'category'} 
+        .populate('user', 'name')  // Populate the 'user' field with the 'name' of the user
+        .populate({ 
+            path: 'orderItems',  // Populate 'orderItems' array
+            populate: {
+                path: 'product',  // For each order item, populate the 'product'
+                populate: 'category'  // For each product, populate its 'category'
+            } 
         });
 
-    if(!order) {
-        res.status(500).json({success: false})
+    // If the order with the given ID is not found, send a 500 response with success set to false
+    if (!order) {
+        res.status(500).json({ success: false });
     } 
+
+    // If the order is found, send it as the response
     res.send(order);
-})
+});
+
 
 router.post('/', async (req, res) => {
     // Extract order items from the request body and save them to the database.
