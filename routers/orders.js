@@ -166,28 +166,48 @@ router.delete('/:id', (req, res) => {
     });
 });
 
-router.get('/get/totalsales', async (req, res)=> {
-    const totalSales= await Order.aggregate([
-        { $group: { _id: null , totalsales : { $sum : '$totalPrice'}}}
-    ])
+// GET request to calculate the total sales from all orders
+router.get('/get/totalsales', async (req, res) => {
 
+    // Use MongoDB's aggregate function to calculate the total sales by summing the 'totalPrice' field across all orders
+    const totalSales = await Order.aggregate([
+        { $group: { _id: null, totalsales: { $sum: '$totalPrice' }}}  // Group all documents and calculate the sum of 'totalPrice'
+    ]);
+
+    // If totalSales is not generated (e.g., aggregation failed), send a 400 status with an error message
     if(!totalSales) {
-        return res.status(400).send('The order sales cannot be generated')
+        return res.status(400).send('The order sales cannot be generated');
     }
 
-    res.send({totalsales: totalSales.pop().totalsales})
-})
+    // Send the total sales value in the response. Pop removes the last element of the array and extracts 'totalsales' field
+    res.send({ totalsales: totalSales.pop().totalsales });
+});
 
-router.get(`/get/count`, async (req, res) =>{
-    const orderCount = await Order.countDocuments((count) => count)
 
-    if(!orderCount) {
-        res.status(500).json({success: false})
-    } 
-    res.send({
-        orderCount: orderCount
-    });
-})
+// GET request to retrieve the total count of orders in the database
+router.get(`/get/count`, async (req, res) => {
+    
+    try {
+        // Use Mongoose's countDocuments() method to get the number of documents in the 'Order' collection
+        const orderCount = await Order.countDocuments();
+
+        // If orderCount is not available, send a failure response
+        if (!orderCount) {
+            return res.status(500).json({ success: false });
+        }
+
+        // Send the order count in the response
+        res.send({
+            orderCount: orderCount
+        });
+
+    } catch (error) {
+        // If an error occurs, return a 500 status with the error
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+
 
 router.get(`/get/userorders/:userid`, async (req, res) =>{
     const userOrderList = await Order.find({user: req.params.userid}).populate({ 
