@@ -137,10 +137,10 @@ router.post('/login', async (req, res) => {
             const token = jwt.sign(
                 {
                     userId: user.id,         // User ID
-                    // isAdmin: user.isAdmin    // User's admin status
+                    isAdmin: user.isAdmin    // User's admin status
                 },
                 secret,                      // Secret key for signing the token
-                { expiresIn: '1d' }           // Token expiration time
+                { expiresIn: '1d' }          // Token expiration time
             );
 
             // Respond with the user's email and the generated token
@@ -155,29 +155,46 @@ router.post('/login', async (req, res) => {
     }
 })
 
+router.post('/register', async (req, res) => {
+    try {
+        // Destructure request body for easier access
+        const { name, email, password, phone, isAdmin, street, apartment, zip, city, country } = req.body;
 
+        // Check if email already exists
+        const existingUser = await User.findOne({ email: email });
+        if (existingUser) {
+            return res.status(400).send('Email already in use!');
+        }
 
+        // Create new user instance
+        let user = new User({
+            name,
+            email,
+            passwordHash: bcrypt.hashSync(password, 10),
+            phone,
+            isAdmin,
+            street,
+            apartment,
+            zip,
+            city,
+            country,
+        });
 
-router.post('/register', async (req,res)=>{
-    let user = new User({
-        name: req.body.name,
-        email: req.body.email,
-        passwordHash: bcrypt.hashSync(req.body.password, 10),
-        phone: req.body.phone,
-        isAdmin: req.body.isAdmin,
-        street: req.body.street,
-        apartment: req.body.apartment,
-        zip: req.body.zip,
-        city: req.body.city,
-        country: req.body.country,
-    })
-    user = await user.save();
+        // Save the user to the database
+        user = await user.save();
 
-    if(!user)
-    return res.status(400).send('the user cannot be created!')
+        // Check if user was created successfully
+        if (!user) {
+            return res.status(400).send('The user cannot be created!');
+        }
 
-    res.send(user);
-})
+        // Send the created user as a response
+        res.status(201).send(user);
+    } catch (error) {
+        // Handle any errors that occur during the process
+        res.status(500).send('Server error: ' + error.message);
+    }
+});
 
 
 router.delete('/:id', async (req, res) => {
