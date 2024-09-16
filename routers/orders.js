@@ -44,8 +44,8 @@ router.get(`/:id`, async (req, res) => {
 });
 
 
+// Extract order items from the request body and save them to the database.
 router.post('/', async (req, res) => {
-    // Extract order items from the request body and save them to the database.
     // For each order item, create a new OrderItem document and save it.
     // Collect all newly created OrderItem IDs.
     const orderItemsIds = Promise.all(req.body.orderItems.map(async (orderItem) => {
@@ -108,37 +108,63 @@ router.post('/', async (req, res) => {
 });
 
 
+// PUT request to update the status of a specific order by ID
+router.put('/:id', async (req, res) => {
 
-router.put('/:id',async (req, res)=> {
+    // Find the order by ID and update its status field with the value from the request body
     const order = await Order.findByIdAndUpdate(
-        req.params.id,
+        req.params.id,  // The ID of the order to update (from request parameters)
         {
-            status: req.body.status
+            status: req.body.status  // The new status of the order (from request body)
         },
-        { new: true}
-    )
+        { new: true }  // Return the updated order instead of the old one
+    );
 
-    if(!order)
-    return res.status(400).send('the order cannot be update!')
+    // If the order is not found or cannot be updated, return a 400 response with an error message
+    if (!order)
+        return res.status(400).send('The order cannot be updated!');
 
+    // If the update is successful, send the updated order as the response
     res.send(order);
-})
+});
 
 
-router.delete('/:id', (req, res)=>{
-    Order.findByIdAndRemove(req.params.id).then(async order =>{
+
+// DELETE request to remove an order by its ID
+router.delete('/:id', (req, res) => {
+    
+    // Find the order by its ID and delete it
+    Order.findByIdAndDelete(req.params.id).then(async order => {
+        
+        // If the order is found and deleted successfully
         if(order) {
+
+            // Loop through the orderItems in the deleted order and delete each associated OrderItem
             await order.orderItems.map(async orderItem => {
-                await OrderItem.findByIdAndRemove(orderItem)
-            })
-            return res.status(200).json({success: true, message: 'the order is deleted!'})
+                await OrderItem.findByIdAndDelete(orderItem);  // Delete each orderItem
+            });
+
+            // Return a success message indicating the order was deleted
+            return res.status(200).json({
+                success: true, 
+                message: 'The order is deleted!'
+            });
         } else {
-            return res.status(404).json({success: false , message: "order not found!"})
+            // If the order is not found, return a 404 error message
+            return res.status(404).json({
+                success: false, 
+                message: "Order not found!"
+            });
         }
-    }).catch(err=>{
-       return res.status(500).json({success: false, error: err}) 
-    })
-})
+
+    }).catch(err => {
+        // If there's an error during the delete process, return a 500 error
+        return res.status(500).json({
+            success: false, 
+            error: err
+        });
+    });
+});
 
 router.get('/get/totalsales', async (req, res)=> {
     const totalSales= await Order.aggregate([
